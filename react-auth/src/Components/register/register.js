@@ -1,15 +1,14 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 
-function Register({ sign, getToken }) {
+function Register({ authentication, parseTokens }) {
   const [switchSign, setSwitchSign] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const checkEmail = ({ target }) => {
-    setEmail(target.value);
-  };
-  const checkPassword = ({ target }) => setPassword(target.value);
+  const pasrseUserDate = (fn) => ({target:{value}}) => fn(value)
+
+  const switchButton = () => setSwitchSign(!switchSign)
 
   const userDate = () => {
     return {
@@ -20,8 +19,8 @@ function Register({ sign, getToken }) {
 
   const submitForm = (e) => {
     e.preventDefault();
-    sign(switchSign, userDate()).then((res) => {
-      getToken(res);
+    authentication(switchSign, userDate()).then((res) => {
+      parseTokens(res);
     });
   };
 
@@ -32,17 +31,17 @@ function Register({ sign, getToken }) {
         type="email"
         value={email}
         placeholder="Email"
-        onChange={checkEmail}
+        onChange={pasrseUserDate(setEmail)}
       />
       <InfoInput
         required
         type="password"
         value={password}
         placeholder="Password"
-        onChange={checkPassword}
+        onChange={pasrseUserDate(setPassword)}
       />
       <Sign type="submit">{switchSign ? "Sign in" : "Sign up"}</Sign>
-      <Switch type="button" onClick={() => setSwitchSign(!switchSign)}>
+      <Switch type="button" onClick={switchButton}>
         {switchSign ? "Register" : "Log into Existing Account"}
       </Switch>
     </Form>

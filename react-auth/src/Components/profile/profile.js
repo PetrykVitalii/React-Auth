@@ -3,30 +3,26 @@ import styled from "styled-components";
 
 function Profile({
   deleteToken,
-  usesRefreshToken,
   usesAccessToken,
-  userDate: { email },
   accessToken,
+  validToken
 }) {
   useEffect(() => {
     const check = setInterval(() => {
       usesAccessToken(accessToken);
     }, 6000);
-    return function cleanup() {
-      clearInterval(check);
-    };
+    return () => clearInterval(check);
   });
+
+  const checkToken = () => usesAccessToken(accessToken)
 
   return (
     <Info>
-      <UserEmail>{email}</UserEmail>
+      <UserEmail>{validToken}</UserEmail>
       <button onClick={deleteToken} type="button">
         Exit
       </button>
-      <button onClick={usesRefreshToken} type="button">
-        refresh
-      </button>
-      <button onClick={() => usesAccessToken(accessToken)} type="button">
+      <button onClick={checkToken} type="button">
         access
       </button>
     </Info>

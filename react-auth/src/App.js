@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { BrowserRouter as Router, Route, Redirect } from "react-router-dom";
 import axios from "axios";
@@ -8,16 +8,45 @@ import Profile from "./Components/profile/profile";
 
 function App() {
   const [accessToken, setAccessToken] = useState("");
-  const [refreshToken, setRefreshToken] = useState("");
-  const [userDate, setUserDate] = useState("");
   const [statusIn, setStatusIn] = useState(false);
+  const [validToken, setValidToken] = useState("");
+
+  useEffect(() => {
+    // checkLocal();
+  });
+
+  const checkLocal = () => {
+    if (localStorage.getItem("refreshToken")) {
+      usesRefreshToken(localStorage.getItem("refreshToken"));
+    }
+  };
+
+  const instance = axios.create({
+    baseURL: "http://142.93.134.108:1111",
+  });
+
+  const res = () => console.log('a');
+
+  axios.interceptors.request.use(
+    config => {
+    console.log('qwwwwwwwwwwwwwwwqd');
+    console.log(config);
+
+      const token = localStorage.getItem("refreshToken")
+      if (token) {
+        usesRefreshToken(localStorage.getItem("refreshToken"));
+      }
+      // config.headers['Content-Type'] = 'application/json';
+      return config;
+  },
+  res())
+
+  const pasrseLocalStorage = (refreshToken) =>
+    localStorage.setItem("refreshToken", refreshToken);
 
   const signUp = async (info) => {
     try {
-      const response = await axios.post(
-        "http://142.93.134.108:1111/sign_up",
-        info
-      );
+      const response = await instance.post("/sign_up", info);
       console.log("👉 реєстрація", response);
       return response;
     } catch (e) {
@@ -26,10 +55,9 @@ function App() {
   };
 
   const signIn = async ({ email, password }) => {
-    setUserDate({ email });
     try {
-      const response = await axios.post(
-        `http://142.93.134.108:1111/login?email=${email}&password=${password}`
+      const response = await instance.post(
+        `/login?email=${email}&password=${password}`
       );
       console.log("👉 перевірка", response);
       return response;
@@ -40,21 +68,21 @@ function App() {
 
   const usesAccessToken = async (token) => {
     try {
-      const response = await axios.get("http://142.93.134.108:1111/me", {
+      const response = await instance.get("/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("👉 accessToken:", response);
-      check(response)
+      check(response);
+      return response;
     } catch (e) {
       console.log(`😱 Axios request failed: ${e}`);
     }
   };
 
-  const usesRefreshToken = async () => {
-    console.log(refreshToken);
+  const usesRefreshToken = async (refreshToken) => {
     try {
-      const response = await axios.post(
-        "http://142.93.134.108:1111/refresh",
+      const response = await instance.post(
+        "/refresh",
         {
           Authorization: `Bearer ${refreshToken}`,
         },
@@ -65,33 +93,35 @@ function App() {
         }
       );
       console.log("👉 refreshToken:", response);
-      getToken(response);
+      parseTokens(response);
       return response;
     } catch (e) {
       console.log(`😱 Axios request failed: ${e}`);
     }
   };
 
-  const check = ({data:{statusCode}}) => {
-    setStatusIn(statusCode === 200 ? true : false);
-  }
+  const check = ({ data }) => {
+    data.statusCode === 200 ? setValidToken(data.body.message) : checkLocal();
+    setStatusIn(data.statusCode === 200 ? true : false);
+  };
 
   const deleteToken = () => {
     setAccessToken("");
-    setRefreshToken("");
-    setStatusIn(false)
+    setStatusIn(false);
+    localStorage.removeItem("refreshToken");
   };
 
-  const sign = (switchSign, user) => {
+  const authentication = (switchSign, user) => {
+    console.log(switchSign);
     return !switchSign ? signUp(user).then(() => signIn(user)) : signIn(user);
   };
 
-  const getToken = ({ data }) => {
+  const parseTokens = ({ data }) => {
     if (data.statusCode === 200) {
       const { access_token, refresh_token } = data.body;
       setAccessToken(access_token);
-      setRefreshToken(refresh_token);
       usesAccessToken(access_token);
+      pasrseLocalStorage(refresh_token);
     } else {
       alert("wrong password or email");
     }
@@ -109,17 +139,22 @@ function App() {
           path="/profile"
           render={() => (
             <Profile
-              userDate={userDate}
               deleteToken={deleteToken}
               usesAccessToken={usesAccessToken}
               usesRefreshToken={usesRefreshToken}
               accessToken={accessToken}
+              validToken={validToken}
             />
           )}
         />
         <Route
           path="/register"
-          render={() => <Register sign={sign} getToken={getToken} />}
+          render={() => (
+            <Register
+              authentication={authentication}
+              parseTokens={parseTokens}
+            />
+          )}
         />
       </Router>
     </Main>
