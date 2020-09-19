@@ -12,7 +12,7 @@ function App() {
   const [validToken, setValidToken] = useState("");
 
   useEffect(() => {
-    // checkLocal();
+    checkLocal();
   });
 
   const checkLocal = () => {
@@ -25,84 +25,71 @@ function App() {
     baseURL: "http://142.93.134.108:1111",
   });
 
-  const res = () => console.log('a');
-
-  axios.interceptors.request.use(
-    config => {
-    console.log('qwwwwwwwwwwwwwwwqd');
-    console.log(config);
-
-      const token = localStorage.getItem("refreshToken")
-      if (token) {
-        usesRefreshToken(localStorage.getItem("refreshToken"));
+  instance.interceptors.response.use(
+    (config) => {
+      if(config.config.url === "/refresh"){
+        config.data.statusCode === 401 || config.data.statusCode === 403
+          ? alert("токен застарів")
+          : parseTokens(config)
       }
-      // config.headers['Content-Type'] = 'application/json';
+      if(config.config.url.includes("/login?email")){
+        config.data.code === 1012
+          ? config.config.url.includes("/login?email") && alert(config.data.message)
+          : parseTokens(config)
+      }
+      if(config.config.url.includes("/me")){
+        if(config.data.statusCode === 401){
+          checkLocal()
+          setStatusIn(false)
+        }
+        else{
+          setValidToken(config.data.body.message)
+          setStatusIn(true)
+        }    
+      }
       return config;
-  },
-  res())
+    }
+  );
 
   const pasrseLocalStorage = (refreshToken) =>
     localStorage.setItem("refreshToken", refreshToken);
 
   const signUp = async (info) => {
-    try {
-      const response = await instance.post("/sign_up", info);
-      console.log("👉 реєстрація", response);
-      return response;
-    } catch (e) {
-      console.log(`😱 Axios request failed: ${e}`);
-    }
+    const response = await instance.post("/sign_up", info);
+    console.log("👉 реєстрація", response);
+    return response;
   };
 
   const signIn = async ({ email, password }) => {
-    try {
-      const response = await instance.post(
-        `/login?email=${email}&password=${password}`
-      );
-      console.log("👉 перевірка", response);
-      return response;
-    } catch (e) {
-      console.log(`😱 Axios request failed: ${e}`);
-    }
+    const response = await instance.post(
+      `/login?email=${email}&password=${password}`
+    );
+    console.log("👉 перевірка", response);
+    return response;
   };
 
   const usesAccessToken = async (token) => {
-    try {
-      const response = await instance.get("/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("👉 accessToken:", response);
-      check(response);
-      return response;
-    } catch (e) {
-      console.log(`😱 Axios request failed: ${e}`);
-    }
+    const response = await instance.get("/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log("👉 accessToken:", response);
+    return response;
   };
 
   const usesRefreshToken = async (refreshToken) => {
-    try {
-      const response = await instance.post(
-        "/refresh",
-        {
+    const response = await instance.post(
+      "/refresh",
+      {
+        Authorization: `Bearer ${refreshToken}`,
+      },
+      {
+        headers: {
           Authorization: `Bearer ${refreshToken}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${refreshToken}`,
-          },
-        }
-      );
-      console.log("👉 refreshToken:", response);
-      parseTokens(response);
-      return response;
-    } catch (e) {
-      console.log(`😱 Axios request failed: ${e}`);
-    }
-  };
-
-  const check = ({ data }) => {
-    data.statusCode === 200 ? setValidToken(data.body.message) : checkLocal();
-    setStatusIn(data.statusCode === 200 ? true : false);
+      }
+    );
+    console.log("👉 refreshToken:", response);
+    return response;
   };
 
   const deleteToken = () => {
@@ -112,19 +99,14 @@ function App() {
   };
 
   const authentication = (switchSign, user) => {
-    console.log(switchSign);
     return !switchSign ? signUp(user).then(() => signIn(user)) : signIn(user);
   };
 
   const parseTokens = ({ data }) => {
-    if (data.statusCode === 200) {
-      const { access_token, refresh_token } = data.body;
-      setAccessToken(access_token);
-      usesAccessToken(access_token);
-      pasrseLocalStorage(refresh_token);
-    } else {
-      alert("wrong password or email");
-    }
+    const { access_token, refresh_token } = data.body;
+    setAccessToken(access_token);
+    usesAccessToken(access_token);
+    pasrseLocalStorage(refresh_token);
   };
 
   return (
@@ -152,7 +134,6 @@ function App() {
           render={() => (
             <Register
               authentication={authentication}
-              parseTokens={parseTokens}
             />
           )}
         />

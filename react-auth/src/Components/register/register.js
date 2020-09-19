@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 
-function Register({ authentication, parseTokens }) {
+function Register({ authentication }) {
   const [switchSign, setSwitchSign] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,9 +19,7 @@ function Register({ authentication, parseTokens }) {
 
   const submitForm = (e) => {
     e.preventDefault();
-    authentication(switchSign, userDate()).then((res) => {
-      parseTokens(res);
-    });
+    authentication(switchSign, userDate())
   };
 
   return (
