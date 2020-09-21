@@ -20,17 +20,18 @@ function App() {
 
   instance.interceptors.response.use(
     (config) => {
-      if(config.config.url === "/refresh"){
+      const {url} = config.config
+      if(url === "/refresh"){
         config.data.statusCode === 401 || config.data.statusCode === 403
           ? alert("токен застарів")
           : parseTokens(config)
       }
-      if(config.config.url.includes("/login?email")){
+      if(url.includes("/login?email")){
         config.data.code === 1012
           ? config.config.url.includes("/login?email") && alert(config.data.message)
           : parseTokens(config)
       }
-      if(config.config.url === ("/me")){
+      if(url === ("/me")){
         if(config.data.statusCode === 401){
           checkLocal(false)
           setStatusIn(false)
