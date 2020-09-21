@@ -7,19 +7,12 @@ import Register from "./Components/register/register";
 import Profile from "./Components/profile/profile";
 
 function App() {
-  const [accessToken, setAccessToken] = useState("");
   const [statusIn, setStatusIn] = useState(false);
   const [validToken, setValidToken] = useState("");
 
   useEffect(() => {
-    checkLocal();
+    !validToken && checkLocal(true);
   });
-
-  const checkLocal = () => {
-    if (localStorage.getItem("refreshToken")) {
-      usesRefreshToken(localStorage.getItem("refreshToken"));
-    }
-  };
 
   const instance = axios.create({
     baseURL: "http://142.93.134.108:1111",
@@ -37,9 +30,9 @@ function App() {
           ? config.config.url.includes("/login?email") && alert(config.data.message)
           : parseTokens(config)
       }
-      if(config.config.url.includes("/me")){
+      if(config.config.url === ("/me")){
         if(config.data.statusCode === 401){
-          checkLocal()
+          checkLocal(false)
           setStatusIn(false)
         }
         else{
@@ -51,8 +44,17 @@ function App() {
     }
   );
 
-  const pasrseLocalStorage = (refreshToken) =>
-    localStorage.setItem("refreshToken", refreshToken);
+
+  const checkLocal = (status) => {
+    if (localStorage.getItem("tokens")) {
+      const tokens = JSON.parse(localStorage.getItem("tokens"))
+      status
+        ? usesAccessToken(tokens.access_token)
+        : usesRefreshToken(tokens.refresh_token)
+    }
+  };
+
+  const pasrseLocalStorage = (tokens) => localStorage.setItem("tokens", JSON.stringify(tokens));
 
   const signUp = async (info) => {
     const response = await instance.post("/sign_up", info);
@@ -93,9 +95,8 @@ function App() {
   };
 
   const deleteToken = () => {
-    setAccessToken("");
     setStatusIn(false);
-    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("tokens");
   };
 
   const authentication = (switchSign, user) => {
@@ -103,10 +104,9 @@ function App() {
   };
 
   const parseTokens = ({ data }) => {
-    const { access_token, refresh_token } = data.body;
-    setAccessToken(access_token);
+    const { access_token} = data.body;
     usesAccessToken(access_token);
-    pasrseLocalStorage(refresh_token);
+    pasrseLocalStorage(data.body);
   };
 
   return (
@@ -122,9 +122,6 @@ function App() {
           render={() => (
             <Profile
               deleteToken={deleteToken}
-              usesAccessToken={usesAccessToken}
-              usesRefreshToken={usesRefreshToken}
-              accessToken={accessToken}
               validToken={validToken}
             />
           )}

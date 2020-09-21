@@ -1,29 +1,16 @@
-import React, { useEffect } from "react";
+import React from "react";
 import styled from "styled-components";
 
 function Profile({
   deleteToken,
-  usesAccessToken,
-  accessToken,
   validToken
 }) {
-  useEffect(() => {
-    const check = setInterval(() => {
-      usesAccessToken(accessToken);
-    }, 6000);
-    return () => clearInterval(check);
-  });
-
-  const checkToken = () => usesAccessToken(accessToken)
 
   return (
     <Info>
       <UserEmail>{validToken}</UserEmail>
       <button onClick={deleteToken} type="button">
         Exit
-      </button>
-      <button onClick={checkToken} type="button">
-        access
       </button>
     </Info>
   );
