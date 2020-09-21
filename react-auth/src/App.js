@@ -47,15 +47,17 @@ function App() {
 
 
   const checkLocal = (status) => {
-    if (localStorage.getItem("tokens")) {
-      const tokens = JSON.parse(localStorage.getItem("tokens"))
+    if (localStorage.getItem("accessToken")) {
       status
-        ? usesAccessToken(tokens.access_token)
-        : usesRefreshToken(tokens.refresh_token)
+        ? usesAccessToken(localStorage.getItem("accessToken"))
+        : usesRefreshToken(localStorage.getItem("refereshToken"))
     }
   };
 
-  const pasrseLocalStorage = (tokens) => localStorage.setItem("tokens", JSON.stringify(tokens));
+  const pasrseLocalStorage = ({access_token,refresh_token}) => {
+    localStorage.setItem("accessToken", access_token)
+    localStorage.setItem("refereshToken", refresh_token)
+  }
 
   const signUp = async (info) => {
     const response = await instance.post("/sign_up", info);
